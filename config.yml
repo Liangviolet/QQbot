@@ -1,0 +1,69 @@
+# QQ 多功能 Bot 配置
+
+# Bot 人设 (R15)
+bot:
+  persona:
+    name: "毒舌美少女"
+    greeting_style: "casual"   # normal | casual | formal
+    reply_tone: "friendly"     # friendly | concise | formal
+
+# LLM 配置
+llm:
+  provider: "openai"          # openai | anthropic | openai-compatible
+  model: "deepseek-v4-flash"
+  base_url: "https://api.deepseek.com"
+  max_tokens: 1024
+  temperature: 0.7
+  retry:
+    max_attempts: 3
+    min_wait: 1
+    max_wait: 10
+  daily_budget_usd: 5.0
+
+# 插件配置
+plugins:
+  # 智能问答 (U4)
+  qa:
+    enabled: true
+    knowledge_base_path: "data/knowledge_base.yml"
+    match_threshold: 75       # thefuzz 模糊匹配阈值 (0-100)
+
+  # B站解析 (U5)
+  bilibili:
+    enabled: true
+    max_bv_per_message: 3
+    video_cache_ttl: 3600     # 视频信息缓存 TTL (秒)
+    summary_context_ttl: 300  # 摘要上下文 TTL (秒)
+
+  # 每日总结 (U6)
+  summary:
+    enabled: false
+    cron: "0 22 * * *"        # 每晚 22:00（已禁用）
+    timezone: "Asia/Shanghai"
+    silent_if_no_messages: false
+
+  # 主动聊天
+  proactive_chat:
+    enabled: true
+    cooldown_seconds: 30
+
+  # 群友画像 (U7)
+  profile:
+    enabled: true
+    min_messages_for_profile: 10
+    message_retention_days: 90
+
+# 数据库
+database:
+  url: "sqlite+aiosqlite:///data/bot.db"
+
+# 日志
+logging:
+  level: "INFO"
+  file: "logs/bot.log"
+  max_bytes: 10485760        # 10MB
+  backup_count: 7
+
+# 超级管理员 QQ 号
+superusers:
+  - 1234567890  # 替换为你的 QQ 号

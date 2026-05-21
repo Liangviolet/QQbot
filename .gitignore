@@ -3,6 +3,8 @@
 
 # Database
 data/bot.db
+data/bot.db-shm
+data/bot.db-wal
 
 # Logs
 logs/
@@ -10,5 +12,33 @@ logs/
 # Python
 __pycache__/
 .venv/
+.uv/
 *.pyc
 *.pyo
+*.egg-info/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
+
+# NapCatQQ (protocol bridge, download separately)
+NapCatQQ/
+NapCat.Shell.zip
+
+# Platform-specific scripts
+*.bat
+*.ps1
+
+# Plans & docs
+docs/
+
+# Misc
+src/maintainability_review.json

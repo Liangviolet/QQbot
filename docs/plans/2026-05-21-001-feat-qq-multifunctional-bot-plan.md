@@ -1,7 +1,7 @@
 ---
 title: feat: QQ 多功能 Bot 开发
 type: feat
-status: active
+status: completed
 date: 2026-05-21
 origin: docs/brainstorms/2026-05-21-qq-bot-requirements.md
 ---

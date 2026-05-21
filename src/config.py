@@ -36,6 +36,11 @@ class QAConfig(BaseModel):
     match_threshold: int = 75
 
 
+class ProactiveChatConfig(BaseModel):
+    enabled: bool = True
+    cooldown_seconds: int = 30
+
+
 class BilibiliConfig(BaseModel):
     enabled: bool = True
     max_bv_per_message: int = 3
@@ -58,6 +63,7 @@ class ProfileConfig(BaseModel):
 
 class PluginConfig(BaseModel):
     qa: QAConfig = QAConfig()
+    proactive_chat: ProactiveChatConfig = ProactiveChatConfig()
     bilibili: BilibiliConfig = BilibiliConfig()
     summary: SummaryConfig = SummaryConfig()
     profile: ProfileConfig = ProfileConfig()

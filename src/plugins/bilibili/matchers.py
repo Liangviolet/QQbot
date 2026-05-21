@@ -3,11 +3,11 @@
 import time
 
 import httpx
-from nonebot import on_message, on_command, logger
+from nonebot import on_message, logger
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment
 from nonebot.rule import to_me, Rule
 
-from src.plugins.bilibili.parser import extract_bv_ids, fetch_video_info, VideoInfo
+from src.plugins.bilibili.parser import extract_bv_ids, extract_all_video_ids, has_video_ref, fetch_video_info, VideoInfo
 from src.plugins.bilibili.renderer import format_multi_video_cards, format_bv_limit_warning
 from src.config import load_config
 from src.services.cache import TTLCache
@@ -27,13 +27,13 @@ _client = httpx.AsyncClient(timeout=10.0)
 
 def _has_bv() -> Rule:
     async def _check(event: GroupMessageEvent) -> bool:
-        return bool(extract_bv_ids(event.get_plaintext()))
+        return has_video_ref(event.get_plaintext())
     return Rule(_check)
 
 
 bv_matcher = on_message(rule=_has_bv(), priority=90, block=False)
 
-summary_matcher = on_command("总结", rule=to_me(), priority=10)
+summary_matcher = on_message(rule=to_me(), priority=8, block=False)
 
 
 async def _get_video_info(bvid: str) -> VideoInfo | None:
@@ -55,20 +55,21 @@ async def handle_bv(event: GroupMessageEvent):
 
     text = event.get_plaintext()
     logger.info(f"[bilibili] received message: {text[:50]}")
-    all_bv_ids = extract_bv_ids(text, max_count=100)
-    logger.info(f"[bilibili] extracted BV: {all_bv_ids}")
+    all_bv_ids = await extract_all_video_ids(text, _client, max_count=_config.max_bv_per_message)
+    logger.info(f"[bilibili] extracted video IDs: {all_bv_ids}")
     if not all_bv_ids:
+        # 可能是 b23 短链解析失败之类的，直接忽略
         return
-    bv_ids = all_bv_ids[:_config.max_bv_per_message]
 
+    # 额外检测所有 BV 号用于超限提示
+    total_bv = len(extract_bv_ids(text, max_count=100))
     infos: list[VideoInfo] = []
-    for bvid in bv_ids:
+    for bvid in all_bv_ids:
         logger.info(f"[bilibili] fetching: {bvid}")
         info = await _get_video_info(bvid)
         logger.info(f"[bilibili] result for {bvid}: {'ok' if info else 'None'}")
         if info is not None:
             infos.append(info)
-            # 存入上下文（仅保留成功获取的视频，供 @bot 总结使用）
             _group_bv[str(event.group_id)] = (time.time(), bvid)
 
     if not infos:
@@ -76,14 +77,18 @@ async def handle_bv(event: GroupMessageEvent):
         return
 
     msg = format_multi_video_cards(infos)
-    if len(all_bv_ids) > _config.max_bv_per_message:
-        msg += MessageSegment.text("\n" + format_bv_limit_warning(len(all_bv_ids), _config.max_bv_per_message))
+    if total_bv > _config.max_bv_per_message:
+        msg += MessageSegment.text("\n" + format_bv_limit_warning(total_bv, _config.max_bv_per_message))
     logger.info("[bilibili] sending response")
     await bv_matcher.finish(msg)
 
 
 @summary_matcher.handle()
 async def handle_summary(event: GroupMessageEvent):
+    text = event.get_plaintext().strip()
+    if text != "总结":
+        return
+
     group_id = str(event.group_id)
     now = time.time()
 
@@ -126,7 +131,7 @@ async def handle_summary(event: GroupMessageEvent):
         )
         summary = response.content
     except LLMUnavailableException:
-        summary = "AI 摘要暂时不可用"
+        summary = "暂时无法获取摘要，等会儿再试试吧"
 
     msg = (
         MessageSegment.image(info.cover_url)

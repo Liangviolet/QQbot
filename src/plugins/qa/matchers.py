@@ -88,8 +88,8 @@ async def handle_qa(bot: Bot, event: GroupMessageEvent) -> None:
         kb=_get_kb(),
         llm_client=_get_llm_client(),
         persona_config={
-            "name": cfg.persona.name,
-            "reply_tone": cfg.persona.reply_tone,
+            "name": cfg.bot.persona.name,
+            "reply_tone": cfg.bot.persona.reply_tone,
         },
         threshold=cfg.plugins.qa.match_threshold,
     )
@@ -185,11 +185,15 @@ async def handle_proactive_chat(event: GroupMessageEvent):
     if event.user_id == event.self_id:
         return
 
-    # 冷却：同一群聊最少间隔 30 秒
+    cfg = _get_config()
+    if not cfg.plugins.proactive_chat.enabled:
+        return
+
+    # 冷却：同一群聊最少间隔 N 秒
     gid = event.group_id
     now = time_module.time()
     last = _proactive_cooldown.get(gid, 0)
-    if now - last < 30:
+    if now - last < cfg.plugins.proactive_chat.cooldown_seconds:
         return
 
     text = event.get_plaintext().strip()
@@ -197,12 +201,11 @@ async def handle_proactive_chat(event: GroupMessageEvent):
     if not _should_proactively_respond(text):
         return
 
-    # 检查是否包含 BV 号（由 bilibili 插件处理）
-    from src.plugins.bilibili.parser import extract_bv_ids
-    if extract_bv_ids(text):
+    # 检查是否包含 B站视频引用（由 bilibili 插件处理）
+    from src.plugins.bilibili.parser import has_video_ref
+    if has_video_ref(text):
         return
 
-    cfg = _get_config()
     if not cfg.plugins.qa.enabled:
         return
 
@@ -219,18 +222,19 @@ async def handle_proactive_chat(event: GroupMessageEvent):
     if llm_client is None:
         return
 
-    partner_name = cfg.persona.name
-    tone = cfg.persona.reply_tone
+    partner_name = cfg.bot.persona.name
+    tone = cfg.bot.persona.reply_tone
 
     system_prompt = (
-        f"你是{partner_name}，一个QQ群的群友。你是著名的群聊吐槽役，以毒舌和幽默闻名。\n"
+        f"你是{partner_name}，一个QQ群的群友。你是一位毒舌美少女，傲娇又可爱。\n"
         "你正在和群友一起聊天。请判断是否应该回复这条消息。\n"
         "规则：\n"
         "1. 如果消息是在问你、或者你可以接梗吐槽，请回复\n"
-        "2. 用幽默毒舌的方式吐槽，但不要真的伤人心，要有搞笑效果\n"
+        "2. 用傲娇毒舌的方式吐槽，但不要真的伤人心\n"
         "3. 如果只是日常闲聊和你无关，回复空字符串不参与\n"
         "4. 回复要简短，一句话最好，像真人聊天一样\n"
-        "5. 如果决定不回复，只输出空字符串"
+        "5. 如果决定不回复，只输出空字符串\n"
+        "6. 禁止添加任何AI相关声明，例如'AI生成''仅供参考''作为AI'等，就像正常人一样说话"
     )
 
     try:

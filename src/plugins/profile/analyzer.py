@@ -222,28 +222,35 @@ def _format_peak_hours(hourly: dict[int, int]) -> str:
     return f"{peak_hour}:00-{end_hour}:00 点"
 
 
-def _format_relations(relations: dict[int, int]) -> str:
-    """格式化互动关系文本。"""
+def _format_relations(relations: dict[int, int], name_map: dict[int, str]) -> str:
+    """格式化互动关系文本，显示群昵称而非 QQ 号。"""
     if not relations:
         return "暂无互动数据"
     sorted_rels = sorted(relations.items(), key=lambda x: -x[1])[:10]
     lines = []
     for target_id, count in sorted_rels:
-        lines.append(f"与 {target_id} 互动 {count} 次")
+        name = name_map.get(target_id, str(target_id))
+        lines.append(f"与 {name} 互动 {count} 次")
     return "\n".join(lines)
 
 
-def generate_profile_report(profile: UserProfile) -> str:
-    """生成格式化的画像报告文本。"""
+def generate_profile_report(profile: UserProfile, target_name: str = "", relation_names: dict[int, str] | None = None) -> str:
+    """生成格式化的画像报告文本。
+
+    Args:
+        profile: 用户画像数据
+        target_name: 目标用户的群名片，为空则用 QQ 号
+        relation_names: 互动对象的群名片映射，为空则显示 QQ 号
+    """
     stats = profile.stats
     peak = _format_peak_hours(stats.hourly_distribution)
-    relations_text = _format_relations(profile.relations)
+    relations_text = _format_relations(profile.relations, relation_names or {})
 
     tags_text = " ".join(f"#{t}" for t in profile.tags) if profile.tags else "暂无标签信息"
 
     # 兴趣标签后续加上关系网络部分
     lines = [
-        f"📋 用户 {profile.user_id} 的群聊画像",
+        f"📋 {target_name or profile.user_id} 的群聊画像",
         "────────────",
         "📊 发言统计",
         f"总发言：{stats.total_messages} 条 | 日均：{stats.avg_daily} 条",

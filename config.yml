@@ -3,15 +3,15 @@
 # Bot 人设 (R15)
 bot:
   persona:
-    name: "毒舌吐槽君"
+    name: "毒舌美少女"
     greeting_style: "casual"   # normal | casual | formal
     reply_tone: "friendly"     # friendly | concise | formal
 
 # LLM 配置
 llm:
   provider: "openai"          # openai | anthropic | openai-compatible
-  model: "gpt-4o-mini"
-  base_url: ""                # 覆盖 API 端点（如 DeepSeek 等兼容 API）
+  model: "deepseek-v4-flash"
+  base_url: "https://api.deepseek.com"
   max_tokens: 1024
   temperature: 0.7
   retry:
@@ -41,6 +41,11 @@ plugins:
     cron: "0 22 * * *"        # 每晚 22:00（已禁用）
     timezone: "Asia/Shanghai"
     silent_if_no_messages: false
+
+  # 主动聊天
+  proactive_chat:
+    enabled: true
+    cooldown_seconds: 30
 
   # 群友画像 (U7)
   profile:

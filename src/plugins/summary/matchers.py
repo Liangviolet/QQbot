@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from nonebot import on_command, logger
+from nonebot import on_message, logger
 from nonebot.adapters.onebot.v11 import GroupMessageEvent
 from nonebot.rule import to_me
 
@@ -11,11 +11,15 @@ from src.services.llm_client import create_llm_client
 
 from .generator import generate_summary
 
-summary_cmd = on_command("今日总结", rule=to_me(), priority=10)
+summary_cmd = on_message(rule=to_me(), priority=8, block=False)
 
 
 @summary_cmd.handle()
 async def handle_summary_cmd(event: GroupMessageEvent):
+    text = event.get_plaintext().strip()
+    if text != "今日总结":
+        return
+
     config = load_config()
     group_id = event.group_id
 
@@ -41,8 +45,8 @@ async def handle_summary_cmd(event: GroupMessageEvent):
             "model": llm_config.model,
         })
         persona_config = {
-            "name": config.persona.name,
-            "reply_tone": config.persona.reply_tone,
+            "name": config.bot.persona.name,
+            "reply_tone": config.bot.persona.reply_tone,
         }
     except Exception:
         pass  # LLM 不可用时用纯模板

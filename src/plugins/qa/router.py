@@ -25,15 +25,12 @@ async def route(
     Returns:
         最终回复文本
     """
-    # 空问题引导
-    if not question or not question.strip():
-        return "在呢，有什么可以帮你的？"
-
     # ---- 知识库优先匹配 ------------------------------------------------
-    result = kb.search(question, threshold=threshold)
-    if result is not None:
-        answer, _source = result
-        return f"{answer}\n\n—— 来自知识库"
+    if question and question.strip():
+        result = kb.search(question, threshold=threshold)
+        if result is not None:
+            answer, _source = result
+            return answer
 
     # ---- LLM 兜底 -----------------------------------------------------
     answer = await generate_answer(question, persona_config, llm_client)
@@ -42,4 +39,4 @@ async def route(
     if answer == FALLBACK_MSG:
         return answer
 
-    return f"{answer}\n\n*AI 生成，仅供参考"
+    return answer

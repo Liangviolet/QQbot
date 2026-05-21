@@ -112,7 +112,9 @@ NapCatQQ (QQ 协议端) ──WebSocket──> NoneBot2 (机器人框架) ──
 - QQNT（NapCatQQ 注入目标）
 - API Key（DeepSeek / OpenAI / Anthropic）
 
-## 快速开始
+## 快速开始（从零部署）
+
+以下是从新机器完整部署的步骤。
 
 ### 1. 克隆项目
 
@@ -121,34 +123,60 @@ git clone <repo-url>
 cd QQBot
 ```
 
-### 2. 配置 NapCatQQ
+### 2. 安装 NapCatQQ（QQ 协议端）
 
-NapCatQQ 已预置在 `NapCatQQ/` 目录中，配置文件位于 `NapCatQQ/config/`。
+NapCatQQ 需要单独下载，不包含在 git 仓库中。
+
+**下载 NapCatQQ：**
+
+- 访问 [NapCatQQ Releases](https://github.com/NapNeko/NapCatQQ/releases)
+- 下载最新版本的 `NapCat.Shell.zip`
+- 将压缩包解压到项目根目录的 `NapCatQQ/` 文件夹中
+
+或者使用命令行：
+
+```bash
+# 创建 NapCatQQ 目录并下载（以 v9.x 为例，请查看最新版本）
+mkdir NapCatQQ
+cd NapCatQQ
+# 下载 NapCat.Shell.zip 并解压
+```
+
+**配置 NapCatQQ：**
+
+配置文件位于 `NapCatQQ/config/`，关键配置：
+
+1. `onebot11_<bot-qq>.json` — OneBot 连接配置（反向 WebSocket 地址）
+2. `webui.json` — Web 管理面板登录 Token
 
 **启动 NapCatQQ：**
 
-使用管理员身份运行 `go.bat`：
-
-```batch
-go.bat
+```bash
+cd NapCatQQ
+napcat.bat
 ```
-
-该脚本会自动：
-- 关闭旧版 QQ 和 NapCat 进程
-- 加载 NapCatQQ 环境变量
-- 启动 QQNT + NapCatQQ 注入
 
 首次启动需扫描二维码登录 QQ 账号。
 
+> 详细部署文档请参考 [NapCatQQ 官方文档](https://napneko.github.io/)
+
+**配置 NapCatQQ 连接到机器人：**
+
+确保 `NapCatQQ/config/onebot11_<bot-qq>.json` 中的反向 WebSocket 地址指向机器人监听端口（默认 `ws://127.0.0.1:8080/onebot/v11/ws/`）：
+
+```json
+{
+  "ws_reverse_servers": [{
+    "name": "QQBot",
+    "url": "ws://127.0.0.1:8080/onebot/v11/ws/",
+    "reconnect_interval": 3000
+  }]
+}
+```
+
 **Web 管理面板：**
 
-NapCatQQ 自带 Web 管理面板，启动后访问：
-
-```
-http://localhost:6099
-```
-
-登录 Token 可在 `NapCatQQ/config/webui.json` 中查看。
+NapCatQQ 启动后访问 `http://localhost:6099`，Token 在 `NapCatQQ/config/webui.json` 中查看。
 
 ### 3. 配置机器人
 
@@ -161,14 +189,14 @@ cp .env.example .env
 编辑 `.env`，填入必要的密钥：
 
 ```env
-# LLM API 密钥（DeepSeek / OpenAI 等）
+# LLM API 密钥（DeepSeek / OpenAI 等，至少配置一个）
 OPENAI_API_KEY=sk-your-api-key-here
 
 # Bot QQ 账号
 BOT_QQ_ACCOUNT=3810708266
 ```
 
-编辑 `config.yml` 调整机器人配置：
+编辑 `config.yml` 调整机器人配置（可选）：
 
 ```yaml
 bot:
@@ -185,17 +213,19 @@ llm:
 ### 4. 安装依赖并启动机器人
 
 ```bash
-# 创建虚拟环境（推荐）
+# 1. 创建虚拟环境（推荐）
 python -m venv .venv
 
-# 激活虚拟环境
-.venv\Scripts\activate    # Windows
-source .venv/bin/activate  # Linux/macOS
+# 2. 激活虚拟环境
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
 
-# 安装依赖
-pip install -r requirements.txt
+# 3. 安装依赖（从 pyproject.toml）
+pip install -e .
 
-# 启动机器人
+# 4. 启动机器人
 python bot.py
 ```
 
@@ -252,9 +282,12 @@ plugins:
 ### .env 环境变量
 
 ```env
-OPENAI_API_KEY=sk-...         # DeepSeek / OpenAI API 密钥
-ANTHROPIC_API_KEY=sk-ant-...  # Anthropic API 密钥（可选）
-BOT_QQ_ACCOUNT=1234567890     # 机器人 QQ 号
+# LLM API 密钥（至少配置一个）
+OPENAI_API_KEY=sk-your-openai-api-key
+# ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key
+
+# Bot QQ 账号
+BOT_QQ_ACCOUNT=1234567890
 ```
 
 ## 项目结构
@@ -266,10 +299,10 @@ QQBot/
 ├── .env                           # 环境变量（密钥，已 gitignore）
 ├── .env.example                   # 环境变量模板
 ├── pyproject.toml                 # 项目元数据
-├── NapCatQQ/                      # NapCatQQ 协议端
-│   └── config/
+├── NapCatQQ/                      # NapCatQQ 协议端（需自行下载）
+│   └── config/                    # 连接配置、Web 面板 Token
 │       ├── webui.json             # Web 面板配置
-│       └── onebot11_3810708266.json  # OneBot 连接配置
+│       └── onebot11_<qq>.json     # OneBot 连接配置
 ├── src/
 │   ├── config.py                  # Pydantic 配置模型
 │   ├── models/                    # 数据库模型
@@ -316,7 +349,14 @@ QQBot/
 A: 检查 WebSocket 连接是否正常（终端日志应显示 `Bot xxx connected`）。B站 API 可能有频率限制，稍等重试。
 
 **Q: @bot 没反应？**
-A: 检查 `.env` 中的 API Key 是否正确配置，以及 API 端点是否可达。查看 `logs/bot.log` 中的错误日志。
+A: 检查以下几点：
+   - `.env` 中的 API Key 是否正确配置，API 端点是否可达
+   - 是否已激活虚拟环境
+   - NapCatQQ 是否已成功启动并连接（终端应显示 `Bot xxx connected`）
+   - 查看 `logs/bot.log` 中的错误日志
+
+**Q: 数据库是怎么创建的？需要手动初始化吗？**
+A: 不需要。首次启动机器人时，`bot.py` 会自动调用 `init_db()` 创建 SQLite 数据库和所有表（`data/bot.db`）。如果遇到 "no such table" 错误，检查是否启动了正确的入口文件（`python bot.py`，不是 `python -m nonebot`）。
 
 **Q: 如何更改人设？**
 A: 修改 `config.yml` 中的 `bot.persona.name` 和 `reply_tone`，重启机器人生效。

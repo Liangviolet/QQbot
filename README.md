@@ -193,7 +193,7 @@ cp .env.example .env
 OPENAI_API_KEY=sk-your-api-key-here
 
 # Bot QQ 账号
-BOT_QQ_ACCOUNT=3810708266
+BOT_QQ_ACCOUNT=1234567890
 ```
 
 编辑 `config.yml` 调整机器人配置（可选）：
@@ -241,7 +241,7 @@ Succeeded to load plugin "profile"
 Succeeded to load plugin "summary"
 Running NoneBot...
 Uvicorn running on http://127.0.0.1:8080
-Bot 3810708266 connected
+Bot <your-bot-qq> connected
 ```
 
 NapCatQQ 的 Web 管理面板中也可查看连接状态。
